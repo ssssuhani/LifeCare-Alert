@@ -30,6 +30,13 @@ const float FALL_THRESHOLD_G = 2.5f;
 const unsigned long FALL_COOLDOWN_MS = 8000;
 const unsigned long HEALTH_UPLOAD_INTERVAL_MS = 4000;
 const long FINGER_THRESHOLD_IR = 25000;
+const float FREE_FALL_THRESHOLD_G = 0.6f;
+const float STABLE_MIN_G = 0.9f;
+const float STABLE_MAX_G = 1.3f;
+const unsigned long FALL_CONFIRM_WINDOW_MS = 1000;
+const unsigned long BUZZER_DURATION_MS = 3000;
+
+#define BUZZER 5
 
 MPU6050 mpu;
 MAX30105 pulseSensor;
@@ -48,6 +55,12 @@ int instantBpm = 0;
 bool fingerPresent = false;
 bool pulseInitialized = false;
 long latestIr = 0;
+bool freeFallDetected = false;
+bool impactDetected = false;
+bool fallDetected = false;
+bool buzzerState = false;
+unsigned long fallStartTime = 0;
+unsigned long buzzerStart = 0;
 
 int randomHr = 82;
 int randomSpo2 = 97;
@@ -95,6 +108,49 @@ bool initPulseSensor() {
   pulseSensor.setPulseAmplitudeGreen(0);
   Serial.println("Pulse sensor initialized");
   return true;
+}
+
+void updateFallDetection(float totalAcc) {
+  if (totalAcc < FREE_FALL_THRESHOLD_G) {
+    freeFallDetected = true;
+    impactDetected = false;
+    fallStartTime = millis();
+  }
+
+  if (freeFallDetected && totalAcc > FALL_THRESHOLD_G) {
+    impactDetected = true;
+  }
+
+  if (impactDetected && (millis() - fallStartTime < FALL_CONFIRM_WINDOW_MS)) {
+    if (totalAcc > STABLE_MIN_G && totalAcc < STABLE_MAX_G) {
+      fallDetected = true;
+      buzzerState = true;
+      buzzerStart = millis();
+
+      Serial.println("FALL CONFIRMED!");
+
+      freeFallDetected = false;
+      impactDetected = false;
+    }
+  }
+
+  if (freeFallDetected && (millis() - fallStartTime >= FALL_CONFIRM_WINDOW_MS)) {
+    freeFallDetected = false;
+    impactDetected = false;
+  }
+}
+
+void handleBuzzer() {
+  if (!buzzerState) {
+    digitalWrite(BUZZER, LOW);
+    return;
+  }
+
+  digitalWrite(BUZZER, HIGH);
+  if (millis() - buzzerStart >= BUZZER_DURATION_MS) {
+    digitalWrite(BUZZER, LOW);
+    buzzerState = false;
+  }
 }
 
 void updatePulseReadings() {
@@ -264,6 +320,8 @@ void setup() {
   Serial.println("Starting ESP32 health + fall detector...");
 
   Wire.begin();
+  pinMode(BUZZER, OUTPUT);
+  digitalWrite(BUZZER, LOW);
   mpu.initialize();
 
   if (!mpu.testConnection()) {
@@ -290,18 +348,21 @@ void setup() {
 void loop() {
   updatePulseReadings();
   const float acceleration = readAccelerationInG();
+  updateFallDetection(acceleration);
+  handleBuzzer();
 
   const int heartRate = getHeartRate();
   const int spo2 = getSpo2();
   const unsigned long nowMs = millis();
 
   const bool cooldownActive = nowMs - lastFallSentAt < FALL_COOLDOWN_MS;
-  if (acceleration > FALL_THRESHOLD_G && !cooldownActive) {
+  if (fallDetected && !cooldownActive) {
     const bool fallSent = sendFallEvent(heartRate, spo2);
     const bool healthSent = sendHealthReading(heartRate, spo2, acceleration, true);
+    lastFallSentAt = nowMs;
+    fallDetected = false;
 
     if (fallSent) {
-      lastFallSentAt = nowMs;
       Serial.println("Fall event sent successfully");
     } else {
       Serial.println("Failed to send fall event");
@@ -332,6 +393,10 @@ void loop() {
     Serial.print(latestIr);
     Serial.print(" | WiFi=");
     Serial.print(WiFi.status() == WL_CONNECTED ? "OK" : "DOWN");
+    Serial.print(" | FF=");
+    Serial.print(freeFallDetected ? "YES" : "NO");
+    Serial.print(" | Impact=");
+    Serial.print(impactDetected ? "YES" : "NO");
     Serial.print(" | Mode=");
     Serial.println(USE_RANDOM_VITALS ? "RANDOM" : "REAL");
   }
