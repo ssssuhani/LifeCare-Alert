@@ -387,12 +387,33 @@
         }
       }
 
-      async function loadLatestEvent() {
+      async function getLatestLocationForEvent(eventId) {
         const { data, error } = await supabase
+          .from('locations')
+          .select('latitude, longitude, created_at')
+          .eq('event_id', eventId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          throw error;
+        }
+
+        return data?.[0] ?? null;
+      }
+
+      async function loadLatestEvent() {
+        let query = supabase
           .from('fall_events')
           .select('id, device_id, event_type, heart_rate, spo2, created_at')
           .order('created_at', { ascending: false })
           .limit(1);
+
+        if (TARGET_DEVICE_ID) {
+          query = query.eq('device_id', TARGET_DEVICE_ID);
+        }
+
+        const { data, error } = await query;
 
         if (error) {
           setLog(`Failed to load latest fall event: ${error.message}`);
@@ -406,13 +427,52 @@
         }
 
         updateHealthUI(latestEvent);
+
+        if (latestEvent.event_type !== 'fall') {
+          setStatus('Monitoring active', 'safe');
+          setLog(`Latest event type is "${latestEvent.event_type}". Waiting for a fall event.`);
+          return;
+        }
+
+        try {
+          const existingLocation = await getLatestLocationForEvent(latestEvent.id);
+          if (existingLocation) {
+            updateLocationUI(
+              Number(existingLocation.latitude),
+              Number(existingLocation.longitude)
+            );
+            setStatus('Fall detected on phone', 'alert');
+            setLog(
+              `Location already synced for event #${latestEvent.id} at ${formatDateTime(existingLocation.created_at)}.`
+            );
+            return;
+          }
+        } catch (locationError) {
+          setLog(`Could not verify existing location for latest event: ${locationError.message}`);
+        }
+
+        setLog(`Latest fall event #${latestEvent.id} has no location yet. Trying to sync GPS now...`);
+        await handleFallEvent(latestEvent, { skipAlarm: true });
       }
 
-      async function handleFallEvent(eventRow) {
+      async function handleFallEvent(eventRow, options = {}) {
+        const { skipAlarm = false } = options;
         updateHealthUI(eventRow);
         setStatus('Fall detected on phone', 'alert');
 
         try {
+          const existingLocation = await getLatestLocationForEvent(eventRow.id);
+          if (existingLocation) {
+            updateLocationUI(
+              Number(existingLocation.latitude),
+              Number(existingLocation.longitude)
+            );
+            setLog(
+              `Event #${eventRow.id} already has synced location from ${formatDateTime(existingLocation.created_at)}.`
+            );
+            return;
+          }
+
           const location = await getCurrentLocation();
 
           console.log('Accurate phone location', location);
@@ -421,11 +481,15 @@
           updateLocationUI(location.latitude, location.longitude, location.accuracy);
 
           setLog('New fall event received. Exact phone location saved to Supabase.');
-          alert('Fall Detected');
-          createAlarmTone();
+          if (!skipAlarm) {
+            alert('Fall Detected');
+            createAlarmTone();
+          }
         } catch (error) {
           setLog(`Fall detected, but location sync failed: ${error.message}`);
-          alert(`Fall detected, but location failed: ${error.message}`);
+          if (!skipAlarm) {
+            alert(`Fall detected, but location failed: ${error.message}`);
+          }
         }
       }
 
