@@ -30,8 +30,6 @@ function NotificationPanel({
     };
   }, []);
 
-  const unreadCount = notifications.filter((n) => n.type === 'alert').length;
-
   return (
     <div className="relative" ref={panelRef}>
       <button

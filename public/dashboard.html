@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fall Detection Dashboard</title>
+    <style>
+      :root {
+        --bg: #eff6ff;
+        --panel: rgba(255, 255, 255, 0.94);
+        --border: #bfdbfe;
+        --text: #0f172a;
+        --muted: #475569;
+        --danger-bg: #fee2e2;
+        --danger-text: #991b1b;
+        --accent-bg: #ecfeff;
+        --accent-text: #115e59;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top right, rgba(14, 165, 233, 0.2), transparent 32%),
+          linear-gradient(180deg, #e0f2fe 0%, #f8fafc 100%);
+      }
+
+      .shell {
+        width: min(1160px, calc(100% - 24px));
+        margin: 0 auto;
+        padding: 24px 0 40px;
+      }
+
+      .hero,
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      .hero {
+        padding: 26px;
+      }
+
+      .hero p {
+        color: var(--muted);
+        line-height: 1.6;
+      }
+
+      .alert {
+        margin-top: 14px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: var(--danger-bg);
+        color: var(--danger-text);
+        font-weight: 700;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 18px;
+      }
+
+      .card {
+        padding: 20px;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .value {
+        margin-top: 10px;
+        font-size: 1.35rem;
+        font-weight: 700;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 1.1fr 0.9fr;
+        gap: 18px;
+        margin-top: 18px;
+      }
+
+      .coords {
+        display: inline-flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: var(--accent-bg);
+        color: var(--accent-text);
+        font-weight: 700;
+      }
+
+      iframe {
+        width: 100%;
+        height: 360px;
+        border: 0;
+        border-radius: 20px;
+        margin-top: 16px;
+      }
+
+      .muted {
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .list {
+        margin: 14px 0 0;
+        padding-left: 20px;
+        line-height: 1.7;
+      }
+
+      .diagram {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: 18px;
+        background: #f8fafc;
+        border: 1px dashed #94a3b8;
+        white-space: pre-wrap;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.94rem;
+      }
+
+      @media (max-width: 900px) {
+        .stats {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .layout {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .stats {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="shell">
+      <section class="hero">
+        <h1>Fall Detection Monitoring Dashboard</h1>
+        <p>
+          This dashboard watches the latest fall event, shows heart rate and SpO2, tracks the
+          newest linked location, and refreshes automatically when new rows arrive in Supabase.
+        </p>
+        <div id="alertBox" class="alert">Waiting for fall event data...</div>
+      </section>
+
+      <section class="stats">
+        <article class="card">
+          <div class="label">Status</div>
+          <div id="statusValue" class="value">--</div>
+        </article>
+        <article class="card">
+          <div class="label">Heart Rate</div>
+          <div id="heartRateValue" class="value">-- bpm</div>
+        </article>
+        <article class="card">
+          <div class="label">SpO2</div>
+          <div id="spo2Value" class="value">-- %</div>
+        </article>
+        <article class="card">
+          <div class="label">Latest Fall Time</div>
+          <div id="timeValue" class="value" style="font-size: 1rem;">--</div>
+        </article>
+      </section>
+
+      <section class="layout">
+        <article class="card">
+          <h2>Latest Exact Location</h2>
+          <p id="metaText" class="muted">No location received yet.</p>
+          <div id="coords" class="coords" hidden>Latitude: -- | Longitude: --</div>
+          <iframe id="mapFrame" title="Google Maps view" src="about:blank" hidden></iframe>
+        </article>
+
+        <article class="card">
+          <h2>System Flow</h2>
+          <ol class="list">
+            <li>ESP32 detects a fall and inserts a row into <code>fall_events</code>.</li>
+            <li>The patient phone page receives the new event with Supabase realtime.</li>
+            <li>The phone fetches exact GPS coordinates using <code>navigator.geolocation</code>.</li>
+            <li>The phone inserts latitude and longitude into <code>locations</code>.</li>
+            <li>This dashboard refreshes automatically and shows the latest health and map data.</li>
+          </ol>
+
+          <div class="diagram">ESP32 + MPU6050
+  |
+  v
+Supabase fall_events (heart_rate, spo2, time)
+  |
+  v
+Phone browser realtime listener
+  |
+  v
+Exact GPS fetch with navigator.geolocation
+  |
+  v
+Supabase locations (latitude, longitude)
+  |
+  v
+Live dashboard + map auto-update</div>
+        </article>
+      </section>
+    </main>
+
+    <script type="module">
+      import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+      const SUPABASE_URL = 'https://spuyqhrinpbrvosareaq.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwdXlxaHJpbnBicnZvc2FyZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjE4MjMsImV4cCI6MjA4OTM5NzgyM30.e2hRsqqmtXVXHM3VkULQ85-8Q_HDfckB7rV_4bgrNOI';
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const alertBox = document.getElementById('alertBox');
+      const statusValue = document.getElementById('statusValue');
+      const heartRateValue = document.getElementById('heartRateValue');
+      const spo2Value = document.getElementById('spo2Value');
+      const timeValue = document.getElementById('timeValue');
+      const metaText = document.getElementById('metaText');
+      const coords = document.getElementById('coords');
+      const mapFrame = document.getElementById('mapFrame');
+
+      function formatDateTime(value) {
+        if (!value) return '--';
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? '--' : parsed.toLocaleString();
+      }
+
+      function setMap(latitude, longitude) {
+        coords.hidden = false;
+        coords.textContent = `Latitude: ${latitude.toFixed(6)} | Longitude: ${longitude.toFixed(6)}`;
+        mapFrame.hidden = false;
+        mapFrame.src = `https://www.google.com/maps?q=${latitude},${longitude}&z=16&output=embed`;
+      }
+
+      async function loadLatestData() {
+        const { data: eventRows, error: eventError } = await supabase
+          .from('fall_events')
+          .select('id, device_id, event_type, heart_rate, spo2, created_at')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (eventError) {
+          alertBox.textContent = `Error loading fall events: ${eventError.message}`;
+          return;
+        }
+
+        const latestEvent = eventRows?.[0];
+
+        if (!latestEvent) {
+          alertBox.textContent = 'No fall event found yet.';
+          statusValue.textContent = '--';
+          heartRateValue.textContent = '-- bpm';
+          spo2Value.textContent = '-- %';
+          timeValue.textContent = '--';
+          metaText.textContent = 'Insert a row into fall_events to begin.';
+          coords.hidden = true;
+          mapFrame.hidden = true;
+          return;
+        }
+
+        alertBox.textContent = `Fall detected for event #${latestEvent.id}`;
+        statusValue.textContent = latestEvent.event_type === 'fall' ? 'Fall' : latestEvent.event_type;
+        heartRateValue.textContent = `${latestEvent.heart_rate ?? '--'} bpm`;
+        spo2Value.textContent = `${latestEvent.spo2 ?? '--'} %`;
+        timeValue.textContent = formatDateTime(latestEvent.created_at);
+        metaText.textContent = `Device: ${latestEvent.device_id}`;
+
+        const { data: locationRows, error: locationError } = await supabase
+          .from('locations')
+          .select('latitude, longitude, created_at')
+          .eq('event_id', latestEvent.id)
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (locationError) {
+          alertBox.textContent = `Error loading locations: ${locationError.message}`;
+          return;
+        }
+
+        const latestLocation = locationRows?.[0];
+
+        if (!latestLocation) {
+          coords.hidden = true;
+          mapFrame.hidden = true;
+          metaText.textContent += ` | Time: ${formatDateTime(latestEvent.created_at)} | Waiting for phone location sync.`;
+          return;
+        }
+
+        metaText.textContent += ` | Location synced at ${formatDateTime(latestLocation.created_at)}`;
+        setMap(latestLocation.latitude, latestLocation.longitude);
+      }
+
+      await loadLatestData();
+
+      supabase
+        .channel('dashboard-live-updates')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'fall_events' },
+          loadLatestData
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'locations' },
+          loadLatestData
+        )
+        .subscribe();
+    </script>
+  </body>
+</html>

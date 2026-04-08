@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <title>Patient Phone Monitor</title>
+    <style>
+      :root {
+        --bg-top: #eff6ff;
+        --bg-bottom: #f8fafc;
+        --panel: rgba(255, 255, 255, 0.92);
+        --text: #0f172a;
+        --muted: #475569;
+        --line: #cbd5e1;
+        --safe-bg: #dcfce7;
+        --safe-text: #166534;
+        --alert-bg: #fee2e2;
+        --alert-text: #b91c1c;
+        --accent: #0f766e;
+        --accent-soft: #ccfbf1;
+        --button-dark: #1e293b;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: "DM Sans", system-ui, sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top, rgba(14, 165, 233, 0.18), transparent 32%),
+          linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+      }
+
+      .app {
+        width: min(100%, 560px);
+        margin: 0 auto;
+        padding: 18px;
+      }
+
+      .hero,
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+      }
+
+      .hero {
+        padding: 22px;
+        margin-bottom: 16px;
+      }
+
+      h1,
+      h2,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 1.7rem;
+        line-height: 1.1;
+      }
+
+      .subtext {
+        margin-top: 10px;
+        color: var(--muted);
+        line-height: 1.55;
+      }
+
+      .status {
+        margin-top: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-weight: 700;
+      }
+
+      .status.safe {
+        background: var(--safe-bg);
+        color: var(--safe-text);
+      }
+
+      .status.alert {
+        background: var(--alert-bg);
+        color: var(--alert-text);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .card {
+        padding: 18px;
+        margin-bottom: 14px;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 0.84rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+
+      .value {
+        margin-top: 10px;
+        font-size: 1.28rem;
+        font-weight: 700;
+      }
+
+      .muted {
+        margin-top: 8px;
+        color: var(--muted);
+        line-height: 1.55;
+        font-size: 0.95rem;
+      }
+
+      .maps-link {
+        display: inline-block;
+        margin-top: 12px;
+        padding: 10px 14px;
+        border-radius: 12px;
+        text-decoration: none;
+        color: var(--accent);
+        background: var(--accent-soft);
+        font-weight: 700;
+      }
+
+      button {
+        width: 100%;
+        border: none;
+        border-radius: 16px;
+        padding: 14px;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+        margin-top: 12px;
+        color: white;
+      }
+
+      .primary {
+        background: linear-gradient(135deg, #0f766e, #115e59);
+      }
+
+      .secondary {
+        background: linear-gradient(135deg, #334155, var(--button-dark));
+      }
+
+      .log {
+        margin-top: 14px;
+        padding: 12px;
+        border-radius: 14px;
+        border: 1px solid var(--line);
+        background: #f8fafc;
+        color: var(--muted);
+        white-space: pre-line;
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 520px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <section class="hero">
+        <h1>Patient Live Monitor</h1>
+        <p class="subtext">
+          Keep this page open on the patient's phone. It listens for new fall events, fetches the
+          phone's exact GPS location, sends that location to Supabase, and plays an alarm on the
+          phone.
+        </p>
+        <div id="statusBadge" class="status safe">Monitoring active</div>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <div class="label">Heart Rate</div>
+          <div id="heartRateValue" class="value">-- bpm</div>
+        </article>
+        <article class="card">
+          <div class="label">SpO2</div>
+          <div id="spo2Value" class="value">-- %</div>
+        </article>
+        <article class="card">
+          <div class="label">Latest Fall Time</div>
+          <div id="fallTimeValue" class="value" style="font-size: 1rem;">--</div>
+        </article>
+        <article class="card">
+          <div class="label">Device UUID</div>
+          <div id="deviceValue" class="value" style="font-size: 1rem; overflow-wrap: anywhere;">--</div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Exact Phone Location</h2>
+        <p id="locationText" class="muted">No location saved yet.</p>
+        <a
+          id="mapsLink"
+          class="maps-link"
+          href="#"
+          target="_blank"
+          rel="noreferrer"
+          style="display: none;"
+        >
+          Open in Google Maps
+        </a>
+      </section>
+
+      <section class="card">
+        <h2>Permissions</h2>
+        <p class="muted">
+          Tap these buttons once before monitoring so the browser can use high-accuracy GPS and
+          alarm audio when a new fall event arrives.
+        </p>
+        <button id="locationButton" class="primary">Enable Location Permission</button>
+        <button id="audioButton" class="secondary">Enable Alarm Sound</button>
+        <div id="logBox" class="log">Waiting for setup...</div>
+      </section>
+    </main>
+
+    <script type="module">
+      import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+
+      const SUPABASE_URL = 'https://spuyqhrinpbrvosareaq.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwdXlxaHJpbnBicnZvc2FyZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjE4MjMsImV4cCI6MjA4OTM5NzgyM30.e2hRsqqmtXVXHM3VkULQ85-8Q_HDfckB7rV_4bgrNOI';
+      const TARGET_DEVICE_ID = '';
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const statusBadge = document.getElementById('statusBadge');
+      const heartRateValue = document.getElementById('heartRateValue');
+      const spo2Value = document.getElementById('spo2Value');
+      const fallTimeValue = document.getElementById('fallTimeValue');
+      const deviceValue = document.getElementById('deviceValue');
+      const locationText = document.getElementById('locationText');
+      const mapsLink = document.getElementById('mapsLink');
+      const logBox = document.getElementById('logBox');
+      const locationButton = document.getElementById('locationButton');
+      const audioButton = document.getElementById('audioButton');
+
+      let audioContext = null;
+
+      function setLog(message) {
+        console.log(message);
+        logBox.textContent = message;
+      }
+
+      function setStatus(message, variant) {
+        statusBadge.textContent = message;
+        statusBadge.className = `status ${variant}`;
+      }
+
+      function formatDateTime(value) {
+        if (!value) return '--';
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? '--' : parsed.toLocaleString();
+      }
+
+      function updateHealthUI(eventRow) {
+        heartRateValue.textContent = `${eventRow?.heart_rate ?? '--'} bpm`;
+        spo2Value.textContent = `${eventRow?.spo2 ?? '--'} %`;
+        fallTimeValue.textContent = formatDateTime(eventRow?.created_at);
+        deviceValue.textContent = eventRow?.device_id ?? '--';
+      }
+
+      function updateLocationUI(latitude, longitude, accuracy) {
+        const accuracySuffix = accuracy ? ` | Accuracy: ${Math.round(accuracy)} m` : '';
+        locationText.textContent =
+          `Latitude: ${latitude.toFixed(6)}, Longitude: ${longitude.toFixed(6)}${accuracySuffix}`;
+        mapsLink.style.display = 'inline-block';
+        mapsLink.href = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      }
+
+      function createAlarmTone() {
+        if (!audioContext) return;
+
+        const startTime = audioContext.currentTime;
+
+        for (let index = 0; index < 4; index += 1) {
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+
+          oscillator.type = 'square';
+          oscillator.frequency.value = 920;
+
+          gainNode.gain.value = 0.0001;
+          gainNode.gain.exponentialRampToValueAtTime(0.16, startTime + index * 0.4 + 0.03);
+          gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + index * 0.4 + 0.28);
+
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+
+          oscillator.start(startTime + index * 0.4);
+          oscillator.stop(startTime + index * 0.4 + 0.3);
+        }
+      }
+
+      async function enableAlarmAudio() {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+
+        if (!AudioContextClass) {
+          setLog('Web Audio is not supported in this browser.');
+          return;
+        }
+
+        if (!audioContext) {
+          audioContext = new AudioContextClass();
+        }
+
+        if (audioContext.state === 'suspended') {
+          await audioContext.resume();
+        }
+
+        setLog('Alarm sound enabled successfully.');
+      }
+
+      function getCurrentLocation() {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by this browser.'));
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              resolve({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+              });
+            },
+            (error) => {
+              switch (error.code) {
+                case error.PERMISSION_DENIED:
+                  reject(new Error('Location permission denied.'));
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  reject(new Error('Location information unavailable.'));
+                  break;
+                case error.TIMEOUT:
+                  reject(new Error('Location request timed out.'));
+                  break;
+                default:
+                  reject(new Error('Unknown geolocation error.'));
+              }
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 15000,
+              maximumAge: 0,
+            }
+          );
+        });
+      }
+
+      async function requestLocationPermission() {
+        try {
+          const location = await getCurrentLocation();
+          updateLocationUI(location.latitude, location.longitude, location.accuracy);
+          setLog('Location permission granted and current GPS position fetched.');
+        } catch (error) {
+          setLog(`Location permission error: ${error.message}`);
+        }
+      }
+
+      async function insertLocation(eventId, latitude, longitude) {
+        const { error } = await supabase.from('locations').insert({
+          event_id: eventId,
+          latitude,
+          longitude,
+        });
+
+        if (error) {
+          throw error;
+        }
+      }
+
+      async function loadLatestEvent() {
+        const { data, error } = await supabase
+          .from('fall_events')
+          .select('id, device_id, event_type, heart_rate, spo2, created_at')
+          .order('created_at', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          setLog(`Failed to load latest fall event: ${error.message}`);
+          return;
+        }
+
+        const latestEvent = data?.[0];
+        if (!latestEvent) {
+          setLog('No fall event found yet. Waiting for the first event.');
+          return;
+        }
+
+        updateHealthUI(latestEvent);
+      }
+
+      async function handleFallEvent(eventRow) {
+        updateHealthUI(eventRow);
+        setStatus('Fall detected on phone', 'alert');
+
+        try {
+          const location = await getCurrentLocation();
+
+          console.log('Accurate phone location', location);
+
+          await insertLocation(eventRow.id, location.latitude, location.longitude);
+          updateLocationUI(location.latitude, location.longitude, location.accuracy);
+
+          setLog('New fall event received. Exact phone location saved to Supabase.');
+          alert('Fall Detected');
+          createAlarmTone();
+        } catch (error) {
+          setLog(`Fall detected, but location sync failed: ${error.message}`);
+          alert(`Fall detected, but location failed: ${error.message}`);
+        }
+      }
+
+      locationButton.addEventListener('click', requestLocationPermission);
+      audioButton.addEventListener('click', enableAlarmAudio);
+
+      await loadLatestEvent();
+
+      supabase
+        .channel('phone-live-monitor')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'fall_events',
+          },
+          async (payload) => {
+            const eventRow = payload.new;
+
+            if (TARGET_DEVICE_ID && eventRow.device_id !== TARGET_DEVICE_ID) {
+              return;
+            }
+
+            if (eventRow.event_type === 'fall') {
+              await handleFallEvent(eventRow);
+            }
+          }
+        )
+        .subscribe((status) => {
+          setLog(`Realtime status: ${status}`);
+        });
+    </script>
+  </body>
+</html>

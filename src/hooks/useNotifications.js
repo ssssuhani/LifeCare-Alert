@@ -3,7 +3,6 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 /**
  * Hook for managing health alert notifications.
  * - Adds notifications when mishaps/alerts occur
- * - Sends periodic status notifications
  * - Optional browser Notification API for system alerts
  */
 export function useNotifications(alerts = []) {
@@ -14,7 +13,6 @@ export function useNotifications(alerts = []) {
     Notification.permission === 'granted'
   );
   const lastAlertKeyRef = useRef('');
-  const periodicIntervalRef = useRef(null);
 
   const addNotification = useCallback((message, type = 'alert') => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -72,25 +70,6 @@ export function useNotifications(alerts = []) {
 
     alerts.forEach((msg) => addNotification(msg, 'alert'));
   }, [alerts, addNotification]);
-
-  // Periodic status notification (every 45 seconds)
-  useEffect(() => {
-    periodicIntervalRef.current = setInterval(() => {
-      const timestamp = new Date().toLocaleTimeString();
-      if (alerts.length > 0) {
-        addNotification(
-          `Critical: ${alerts.length} alert(s) require attention - ${timestamp}`,
-          'alert'
-        );
-      } else {
-        addNotification(`Health check OK - All vitals normal (${timestamp})`, 'info');
-      }
-    }, 45000);
-
-    return () => {
-      if (periodicIntervalRef.current) clearInterval(periodicIntervalRef.current);
-    };
-  }, [alerts.length, addNotification]);
 
   return {
     notifications,

@@ -2,16 +2,22 @@
  * Computes overall health status from sensor values.
  * Returns: 'normal' | 'warning' | 'critical'
  */
-export function getStatus(temperature, heartRate, bloodOxygen) {
+export function getStatus({
+  temperature = null,
+  heartRate = null,
+  bloodOxygen = null,
+  fallDetected = false,
+} = {}) {
   const critical =
-    heartRate > 120 ||
-    bloodOxygen < 90 ||
-    temperature > 38;
-  
+    fallDetected ||
+    (typeof heartRate === 'number' && heartRate > 120) ||
+    (typeof bloodOxygen === 'number' && bloodOxygen < 90) ||
+    (typeof temperature === 'number' && temperature > 38);
+
   const warning =
-    heartRate > 100 ||
-    bloodOxygen < 93 ||
-    temperature > 37.5;
+    (typeof heartRate === 'number' && heartRate > 100) ||
+    (typeof bloodOxygen === 'number' && bloodOxygen < 93) ||
+    (typeof temperature === 'number' && temperature > 37.5);
 
   if (critical) return 'critical';
   if (warning) return 'warning';

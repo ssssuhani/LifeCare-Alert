@@ -63,6 +63,9 @@ function EmergencyHelp({
           </div>
         ) : (
           <div className="space-y-4">
+            <div className="inline-flex items-center rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+              {location.source === 'hardware' ? 'Live wearable GPS location' : 'Phone GPS location'}
+            </div>
             <div className="flex flex-wrap gap-2 text-sm">
               <span className="text-slate-600">Lat:</span>
               <span className="font-mono font-medium">{location.latitude.toFixed(6)}</span>
