@@ -14,6 +14,7 @@ import AlertsSection from './components/AlertsSection';
 import FallEventList from './components/FallEventList';
 import { useFallData } from './hooks/useFallData';
 import { useFallAlarm } from './hooks/useFallAlarm';
+import { useHealthData } from './hooks/useHealthData';
 import { useNotifications } from './hooks/useNotifications';
 
 function formatDateTime(value) {
@@ -25,6 +26,7 @@ function formatDateTime(value) {
 
 function App() {
   const { latestEvent, events, loading, error } = useFallData(12);
+  const { data: liveHealth, error: healthError } = useHealthData();
   const alertMessages = React.useMemo(() => {
     if (!latestEvent?.fallDetected) return [];
 
@@ -47,6 +49,11 @@ function App() {
   const mapsLink = latestEvent?.location
     ? `https://www.google.com/maps?q=${latestEvent.location.latitude},${latestEvent.location.longitude}`
     : '';
+  const statusIsFall = Boolean(latestEvent?.fallDetected || liveHealth?.fallDetected);
+  const cardHeartRate = liveHealth?.heartRate ?? latestEvent?.heartRate ?? '--';
+  const cardSpo2 = liveHealth?.bloodOxygen ?? latestEvent?.spo2 ?? '--';
+  const cardDevice = liveHealth?.deviceId ?? latestEvent?.deviceId ?? '--';
+  const cardLastTime = liveHealth?.lastUpdated ?? latestEvent?.timestamp ?? latestEvent?.createdAt ?? null;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -75,6 +82,16 @@ function App() {
                 {error ? 'Database connection issue' : 'Loading fall detection data...'}
               </div>
               {error && <div className="mt-1 text-sm">{String(error)}</div>}
+            </div>
+          </div>
+        )}
+
+        {healthError && (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm">
+            <div className="font-semibold">Live heart rate stream issue</div>
+            <div className="mt-1 text-sm">{String(healthError)}</div>
+            <div className="mt-1 text-xs text-amber-800">
+              Run <code>supabase/health_data.sql</code>, then restart the app.
             </div>
           </div>
         )}
@@ -128,16 +145,16 @@ function App() {
           <HealthCard
             icon={AlertTriangle}
             label="Current Status"
-            value={latestEvent?.fallDetected ? 'Fall' : 'Safe'}
+            value={statusIsFall ? 'Fall' : 'Safe'}
             unit=""
-            accentColor={latestEvent?.fallDetected ? 'border-red-500' : 'border-green-500'}
-            iconBgColor={latestEvent?.fallDetected ? 'bg-red-50' : 'bg-green-50'}
-            iconColor={latestEvent?.fallDetected ? 'text-red-600' : 'text-green-600'}
+            accentColor={statusIsFall ? 'border-red-500' : 'border-green-500'}
+            iconBgColor={statusIsFall ? 'bg-red-50' : 'bg-green-50'}
+            iconColor={statusIsFall ? 'text-red-600' : 'text-green-600'}
           />
           <HealthCard
             icon={Radio}
             label="Device ID"
-            value={latestEvent?.deviceId ?? '--'}
+            value={cardDevice}
             unit=""
             accentColor="border-blue-500"
             iconBgColor="bg-blue-50"
@@ -146,7 +163,7 @@ function App() {
           <HealthCard
             icon={BellRing}
             label="Heart Rate"
-            value={latestEvent?.heartRate ?? '--'}
+            value={cardHeartRate}
             unit="bpm"
             accentColor="border-amber-500"
             iconBgColor="bg-amber-50"
@@ -155,7 +172,7 @@ function App() {
           <HealthCard
             icon={Clock3}
             label="SpO2"
-            value={latestEvent?.spo2 ?? '--'}
+            value={cardSpo2}
             unit="%"
             accentColor="border-cyan-500"
             iconBgColor="bg-cyan-50"
@@ -164,7 +181,7 @@ function App() {
           <HealthCard
             icon={Clock3}
             label="Last Event Time"
-            value={latestEvent?.timestamp ? new Date(latestEvent.timestamp).toLocaleTimeString() : '--'}
+            value={cardLastTime ? new Date(cardLastTime).toLocaleTimeString() : '--'}
             unit=""
             accentColor="border-slate-500"
             iconBgColor="bg-slate-100"

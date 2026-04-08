@@ -38,6 +38,8 @@ function mapRowToState(row) {
   );
 
   return {
+    patientId: row.patient_id ?? null,
+    deviceId: row.device_id ?? null,
     temperature: toNumberOrNull(row.temperature ?? row.temp),
     heartRate: toNumberOrNull(row.heart_rate ?? row.heartRate),
     bloodOxygen: toNumberOrNull(row.blood_oxygen ?? row.bloodOxygen ?? row.spo2),

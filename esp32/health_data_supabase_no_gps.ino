@@ -1,5 +1,6 @@
 #include <Wire.h>
 #include "MAX30105.h"
+#include "heartRate.h"
 #include <MPU6050.h>
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -22,9 +23,14 @@
 MAX30105 particleSensor;
 MPU6050 mpu;
 
-int bpm = 75;
-int spo2 = 98;
-const int fingerThreshold = 50000;
+int bpm = 0;
+int spo2 = -1;
+const long fingerThreshold = 50000;
+const byte RATE_SIZE = 8;
+byte rates[RATE_SIZE] = {0};
+byte rateSpot = 0;
+long lastBeatAt = 0;
+int beatAvg = 0;
 
 float temperature = 0;
 float ax, ay, az, totalAcc;
@@ -65,7 +71,6 @@ void setup() {
 
   mpu.initialize();
 
-  randomSeed(micros());
   Serial.println("Sensors ready");
 }
 
@@ -123,14 +128,40 @@ void readSensors() {
   long irValue = particleSensor.getIR();
 
   if (irValue > fingerThreshold) {
-    bpm += random(-2, 3);
-    bpm = constrain(bpm, 70, 95);
-    spo2 = constrain(98 + random(-1, 2), 95, 100);
+    if (checkForBeat(irValue)) {
+      long delta = millis() - lastBeatAt;
+      lastBeatAt = millis();
+
+      if (delta > 0) {
+        float bpmFloat = 60.0 / (delta / 1000.0);
+        if (bpmFloat > 30 && bpmFloat < 220) {
+          rates[rateSpot] = (byte)bpmFloat;
+          rateSpot = (rateSpot + 1) % RATE_SIZE;
+
+          int sum = 0;
+          int count = 0;
+          for (byte i = 0; i < RATE_SIZE; i++) {
+            if (rates[i] > 0) {
+              sum += rates[i];
+              count++;
+            }
+          }
+
+          beatAvg = count > 0 ? (sum / count) : (int)bpmFloat;
+          bpm = beatAvg;
+        }
+      }
+    }
   } else {
     bpm = 0;
-    spo2 = 0;
+    beatAvg = 0;
+    for (byte i = 0; i < RATE_SIZE; i++) {
+      rates[i] = 0;
+    }
   }
 
+  // Keep null in Supabase until SpO2 algorithm is wired.
+  spo2 = -1;
   temperature = particleSensor.readTemperature();
 
   int16_t axRaw, ayRaw, azRaw;
@@ -176,8 +207,16 @@ void sendToSupabase() {
   StaticJsonDocument<384> doc;
   doc["patient_id"] = PATIENT_ID;
   doc["device_id"] = DEVICE_ID;
-  doc["heart_rate"] = bpm;
-  doc["spo2"] = spo2;
+  if (bpm > 0) {
+    doc["heart_rate"] = bpm;
+  } else {
+    doc["heart_rate"] = nullptr;
+  }
+  if (spo2 > 0) {
+    doc["spo2"] = spo2;
+  } else {
+    doc["spo2"] = nullptr;
+  }
   doc["fall_detected"] = fallDetected;
   doc["acceleration"] = totalAcc;
   doc["temperature"] = temperature;

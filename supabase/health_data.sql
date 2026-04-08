@@ -16,6 +16,18 @@ create table if not exists public.health_data (
   created_at timestamptz not null default now()
 );
 
+alter table public.health_data add column if not exists patient_id text;
+alter table public.health_data add column if not exists device_id text;
+alter table public.health_data add column if not exists temperature double precision;
+alter table public.health_data add column if not exists heart_rate integer;
+alter table public.health_data add column if not exists spo2 integer;
+alter table public.health_data add column if not exists acceleration double precision;
+alter table public.health_data add column if not exists fall_detected boolean default false;
+alter table public.health_data add column if not exists latitude double precision;
+alter table public.health_data add column if not exists longitude double precision;
+alter table public.health_data add column if not exists device_timestamp_ms bigint;
+alter table public.health_data add column if not exists created_at timestamptz not null default now();
+
 create index if not exists health_data_patient_id_created_at_idx
   on public.health_data (patient_id, created_at desc);
 
@@ -23,6 +35,9 @@ create index if not exists health_data_device_id_created_at_idx
   on public.health_data (device_id, created_at desc);
 
 alter table public.health_data enable row level security;
+
+drop policy if exists "health_data_select_public" on public.health_data;
+drop policy if exists "health_data_insert_public" on public.health_data;
 
 create policy "health_data_select_public"
   on public.health_data
@@ -35,3 +50,18 @@ create policy "health_data_insert_public"
   for insert
   to anon
   with check (true);
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'health_data'
+  ) then
+    alter publication supabase_realtime add table public.health_data;
+  end if;
+end $$;
+
+notify pgrst, 'reload schema';

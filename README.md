@@ -207,3 +207,93 @@ Then open:
 - The phone does not create the fall event. It waits for the event, then adds the location.
 - Realtime means the phone and dashboard do not need page refreshes to see new rows.
 - `event_id` in `locations` connects each location to the exact fall event that triggered it.
+
+## Realtime Heartbeat Setup (ESP32 Hardware, No Dummy Data)
+
+The sketch [esp32/fall_detection_supabase.ino](/Users/suhanisharma/majorproject/esp32/fall_detection_supabase.ino) now does both:
+
+1. Uploads live health rows every few seconds to `public.health_data`
+2. Uploads fall events to `public.fall_events` when acceleration crosses threshold
+
+This keeps map/alarm flow working and also gives live heart rate updates in React dashboard.
+
+### 1) Hardware wiring (ESP32 + MAX30102 + MPU6050)
+
+Both sensors use I2C:
+
+- ESP32 `3V3` -> MAX30102 `VIN`, MPU6050 `VCC`
+- ESP32 `GND` -> MAX30102 `GND`, MPU6050 `GND`
+- ESP32 `GPIO21 (SDA)` -> MAX30102 `SDA`, MPU6050 `SDA`
+- ESP32 `GPIO22 (SCL)` -> MAX30102 `SCL`, MPU6050 `SCL`
+
+### 2) Supabase setup
+
+Run both SQL files in Supabase SQL Editor:
+
+1. [supabase/fall_data.sql](/Users/suhanisharma/majorproject/supabase/fall_data.sql)
+2. [supabase/health_data.sql](/Users/suhanisharma/majorproject/supabase/health_data.sql)
+
+Then:
+
+- Create/verify one row in `public.devices`
+- Copy that UUID and set it as `DEVICE_ID` in ESP32 sketch
+- Confirm realtime replication includes `fall_events`, `locations`, and `health_data`
+
+### 3) ESP32 libraries required
+
+Install in Arduino IDE Library Manager:
+
+- `SparkFun MAX3010x Pulse and Proximity Sensor Library`
+- `MPU6050` (common I2C MPU6050 library)
+
+### 4) Configure and upload ESP32 sketch
+
+Open [esp32/fall_detection_supabase.ino](/Users/suhanisharma/majorproject/esp32/fall_detection_supabase.ino) and set:
+
+- `WIFI_SSID`
+- `WIFI_PASSWORD`
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `DEVICE_ID` (UUID from `public.devices.id`)
+- `PATIENT_ID` (text label like `patient_001`)
+
+Upload sketch and open Serial Monitor at `115200`.
+
+You should see logs like:
+
+- `HeartRate=... bpm`
+- `Fall event sent successfully` (on fall)
+- `Fall snapshot pushed to health_data` (on fall)
+
+### 5) Frontend env
+
+In `.env`:
+
+```env
+VITE_SUPABASE_URL="https://YOUR_PROJECT_REF.supabase.co"
+VITE_SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+VITE_SUPABASE_HEALTH_TABLE="health_data"
+```
+
+Restart Vite after env updates:
+
+```bash
+npm run dev
+```
+
+### 6) Verify end-to-end
+
+1. Open React dashboard (`/`) and keep it running.
+2. Put finger on MAX30102 for stable BPM.
+3. Confirm new rows appear in `public.health_data` and dashboard heart-rate card updates.
+4. Trigger fall test by moving/tilting hardware sharply.
+5. Confirm:
+   - row inserted in `public.fall_events`
+   - phone listener receives event
+   - phone inserts row in `public.locations`
+   - map appears in dashboard + alarm works
+
+### 7) Important note on SpO2
+
+Current sketches remove fake SpO2 values and send `null` until a dedicated SpO2 algorithm is added.
+This is intentional to avoid dummy data.
