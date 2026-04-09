@@ -2,27 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --page-bg: #edf3fb;
-  --text-primary: #172033;
-}
-
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html {
-  scroll-behavior: smooth;
-  background: linear-gradient(180deg, #f9fbff 0%, var(--page-bg) 100%);
-}
-
 body {
   font-family: 'DM Sans', system-ui, sans-serif;
-  background: linear-gradient(180deg, #f9fbff 0%, var(--page-bg) 100%);
-  color: var(--text-primary);
-  min-height: 100vh;
+  background-color: #f1f5f9;
   -webkit-tap-highlight-color: transparent;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
@@ -44,13 +32,6 @@ body {
 /* Prevent overscroll bounce on iOS */
 html, body {
   overscroll-behavior-y: contain;
-}
-
-.map-placeholder {
-  background:
-    radial-gradient(circle at 18% 18%, rgba(59, 130, 246, 0.18), transparent 18%),
-    radial-gradient(circle at 80% 78%, rgba(239, 68, 68, 0.18), transparent 18%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 245, 249, 0.9));
 }
 
 /* Smooth scrolling for mobile */

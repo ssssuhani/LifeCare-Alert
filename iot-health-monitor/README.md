@@ -1,4 +1,4 @@
-# LifeCare+
+# IoT Human Health Monitor
 
 A real-time health monitoring dashboard that displays human health data from IoT wearable sensors.
 
@@ -31,57 +31,6 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-## Supabase Integration (Frontend)
-
-This project uses Vite, so your Supabase credentials must be provided via `VITE_*` environment variables.
-
-1. Copy the example env file:
-
-```bash
-cp .env.example .env
-```
-
-2. Put your Supabase Project URL + anon key into `.env`:
-
-- `VITE_SUPABASE_URL`
-- `VITE_SUPABASE_ANON_KEY`
-
-Optional (if your table name is not `health_readings`):
-
-- `VITE_SUPABASE_HEALTH_TABLE`
-
-3. Restart the dev server (`npm run dev`).
-
-Supabase client is initialized in `src/lib/supabaseClient.js`.
-
-### Supabase DB setup (quick)
-
-- If your `.env` uses `VITE_SUPABASE_HEALTH_TABLE=health_readings`, run [supabase/health_readings.sql](/Users/samarthchauhan/Downloads/majorproject/supabase/health_readings.sql).
-- If your `.env` uses `VITE_SUPABASE_HEALTH_TABLE=health_data`, run [supabase/health_data.sql](/Users/samarthchauhan/Downloads/majorproject/supabase/health_data.sql).
-- The phone companion needs `UPDATE` access on the active table, otherwise browser GPS will not be saved back into the fall row.
-
-## Hardware Fall Detection
-
-This repo now includes a reference ESP32 fall-detection sketch in:
-
-- [hardware/esp32-fall-detection/ESP32_FallDetection.ino](/Users/samarthchauhan/Downloads/majorproject/hardware/esp32-fall-detection/ESP32_FallDetection.ino)
-- [hardware/README.md](/Users/samarthchauhan/Downloads/majorproject/hardware/README.md)
-- [android-companion/README.md](/Users/samarthchauhan/Downloads/majorproject/android-companion/README.md)
-
-Recommended production flow:
-
-1. ESP32 hardware (`MPU6050` + `MAX30102`) measures `heart rate`, `SpO2`, and confirms a fall event
-2. ESP32 inserts that fall row into Supabase
-3. Phone browser page (`/?mode=phone`) is already open with location enabled
-4. On the new fall row, the phone page writes its GPS into that same Supabase row
-5. Dashboard shows alert + alarm + map
-
-The browser phone page must run on a secure `https://` origin for mobile geolocation to work.
-
-The Android companion scaffold in [android-companion](/Users/samarthchauhan/Downloads/majorproject/android-companion) is optional future work, not required for this browser-based flow.
-
-For hardware wiring, required Arduino libraries, and the Supabase event payload, see [hardware/README.md](/Users/samarthchauhan/Downloads/majorproject/hardware/README.md).
 
 ## Project Structure
 

@@ -1,40 +1,40 @@
 import React from 'react';
 
-/**
- * Reusable HealthCard component for displaying sensor data.
- * Designed for easy Firebase Realtime Database integration.
- * @param {Object} props
- * @param {React.ReactNode} props.icon - Lucide icon component
- * @param {string} props.label - Card label (e.g., "BODY TEMPERATURE")
- * @param {number|string} props.value - Current sensor value
- * @param {string} props.unit - Unit of measurement (e.g., "°C", "BPM")
- * @param {string} props.accentColor - Tailwind border color class (e.g., "border-red-500")
- * @param {string} props.iconBgColor - Tailwind background for icon (e.g., "bg-red-50")
- * @param {string} props.iconColor - Tailwind text color for icon (e.g., "text-red-600")
- */
-function HealthCard({ icon: Icon, label, value, unit, accentColor, iconBgColor, iconColor }) {
+function HealthCard({
+  icon: Icon,
+  label,
+  value,
+  unit,
+  accentColor,
+  iconBgColor,
+  iconColor,
+  valueClassName = '',
+  wrapValue = false,
+}) {
+  const valueIsPlain = typeof value === 'string' || typeof value === 'number';
+
   return (
     <div
-      className={`
-        bg-white rounded-xl shadow-md
-        border-t-4 ${accentColor}
-        p-6
-        transition-all duration-400 ease-in-out
-        hover:shadow-xl hover:-translate-y-0.5
-      `}
+      className={`rounded-[30px] border border-slate-200/80 border-t-[5px] ${accentColor} bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)] transition-transform duration-300 hover:-translate-y-0.5`}
     >
       <div className="flex items-start justify-between">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1">
+        <div className="min-w-0">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
             {label}
           </p>
-          <p className="text-3xl font-bold text-slate-800 tabular-nums">
+          <div
+            className={`min-h-[5.5rem] text-[2.8rem] font-bold text-slate-900 tabular-nums ${wrapValue ? 'break-all leading-[1.02]' : 'leading-[0.95]'} ${valueClassName}`}
+          >
             {value}
-            <span className="text-lg font-medium text-slate-500 ml-1">{unit}</span>
-          </p>
+            {unit && valueIsPlain && (
+              <span className="ml-1 text-[0.45em] font-semibold text-slate-500">
+                {unit}
+              </span>
+            )}
+          </div>
         </div>
         <div
-          className={`p-3 rounded-xl ${iconBgColor} ${iconColor} transition-transform duration-400 hover:scale-110`}
+          className={`ml-4 rounded-[20px] p-3 ${iconBgColor} ${iconColor}`}
         >
           {Icon && <Icon size={28} strokeWidth={2} />}
         </div>

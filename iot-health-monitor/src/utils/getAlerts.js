@@ -4,25 +4,21 @@
 export function getAlerts(temperature, heartRate, bloodOxygen) {
   const alerts = [];
 
-  const hasHeartRate = typeof heartRate === 'number' && Number.isFinite(heartRate);
-  const hasBloodOxygen = typeof bloodOxygen === 'number' && Number.isFinite(bloodOxygen);
-  const hasTemperature = typeof temperature === 'number' && Number.isFinite(temperature);
-
-  if (hasHeartRate && heartRate > 120) {
+  if (heartRate > 120) {
     alerts.push(`Heart rate critically high: ${heartRate} BPM`);
-  } else if (hasHeartRate && heartRate > 100) {
+  } else if (heartRate > 100) {
     alerts.push(`Heart rate elevated: ${heartRate} BPM`);
   }
 
-  if (hasBloodOxygen && bloodOxygen < 90) {
+  if (bloodOxygen < 90) {
     alerts.push(`Blood oxygen critically low: ${bloodOxygen}%`);
-  } else if (hasBloodOxygen && bloodOxygen < 93) {
+  } else if (bloodOxygen < 93) {
     alerts.push(`Blood oxygen low: ${bloodOxygen}%`);
   }
 
-  if (hasTemperature && temperature > 38) {
+  if (temperature > 38) {
     alerts.push(`Temperature critically high: ${temperature}°C`);
-  } else if (hasTemperature && temperature > 37.5) {
+  } else if (temperature > 37.5) {
     alerts.push(`Temperature elevated: ${temperature}°C`);
   }
 

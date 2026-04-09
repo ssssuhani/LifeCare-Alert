@@ -2,40 +2,29 @@ import React from 'react';
 import { Activity } from 'lucide-react';
 import NotificationPanel from './NotificationPanel';
 
-function Header({ patientId, connectedUserId, notificationProps }) {
+function Header({
+  title = 'LifeCare+',
+  subtitle = 'Real-Time Health Monitoring Dashboard',
+  notificationProps,
+}) {
   return (
-    <header className="bg-white shadow-sm border-b border-slate-200 safe-area-top">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 rounded-xl bg-slate-100 text-slate-700 flex-shrink-0">
+    <header className="safe-area-top border-b border-slate-200/80 bg-white/90 backdrop-blur">
+      <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
+        <div className="flex min-w-0 items-center gap-3">
+          <div className="flex-shrink-0 rounded-2xl bg-slate-100 p-3 text-slate-700 shadow-sm">
               <Activity size={28} strokeWidth={2} />
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl sm:text-3xl font-bold text-slate-800 truncate">
-                LifeCare+
-              </h1>
-              <p className="text-slate-500 text-xs sm:text-base mt-0.5 truncate">
-                Real-Time Health Monitoring Dashboard
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {notificationProps && (
-              <NotificationPanel {...notificationProps} />
-            )}
-            <div className="flex flex-col sm:items-end gap-1">
-              <p className="text-sm text-slate-600">
-                <span className="font-medium text-slate-500">Patient ID:</span>{' '}
-                <span className="font-mono font-semibold">{patientId}</span>
-              </p>
-              <p className="text-sm">
-                <span className="font-medium text-slate-500">Connected:</span>{' '}
-                <span className="font-semibold text-green-600">{connectedUserId}</span>
-              </p>
-            </div>
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-bold text-slate-900 sm:text-4xl">
+              {title}
+            </h1>
+            <p className="mt-0.5 truncate text-sm text-slate-500 sm:text-lg">
+              {subtitle}
+            </p>
           </div>
         </div>
+
+        {notificationProps && <NotificationPanel {...notificationProps} />}
       </div>
     </header>
   );
