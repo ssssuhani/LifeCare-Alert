@@ -38,10 +38,11 @@ MAX30105 pulseSensor;
 
 const char* DEVICE_ID = "esp32-fall-detector-01";
 const char* PATIENT_ID = "patient_001";
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
-const char* SUPABASE_URL = "https://pgcslptsxtqarencwses.supabase.co";
-const char* SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBnY3NscHRzeHRxYXJlbmN3c2VzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2Njc0MzAsImV4cCI6MjA5MTI0MzQzMH0.1gEVE0Kd6lxFky6xhhRYHK9zBnGcJiDPLuftR5NW0KI";
+const char* WIFI_SSID = "Kritika";
+const char* WIFI_PASSWORD = "12345678";
+// Keep this aligned with the web dashboard .env so both clients read/write the same project.
+const char* SUPABASE_URL = "https://spuyqhrinpbrvosareaq.supabase.co";
+const char* SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwdXlxaHJpbnBicnZvc2FyZWFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM4MjE4MjMsImV4cCI6MjA4OTM5NzgyM30.e2hRsqqmtXVXHM3VkULQ85-8Q_HDfckB7rV_4bgrNOI";
 const char* SUPABASE_TABLE = "health_data";
 
 // Sampling and smoothing

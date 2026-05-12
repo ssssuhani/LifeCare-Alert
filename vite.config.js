@@ -5,6 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    allowedHosts: ['.lhr.life'],
+    // Allow temporary tunnel domains (Cloudflare/Pinggy/local) for phone testing.
+    allowedHosts: true,
   },
 })

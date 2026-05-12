@@ -47,7 +47,7 @@ const PHONE_SYNC_META = {
     tone: 'bg-blue-100 text-blue-700',
   },
   synced: {
-    label: 'Fall location synced',
+    label: 'Phone location synced',
     tone: 'bg-emerald-100 text-emerald-700',
   },
   error: {
@@ -130,6 +130,10 @@ function getMapEmbedLink(location) {
   )}`;
 }
 
+function normalizeDeviceId(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
 function buildAlertMessages({
   fallDetected,
   deviceId,
@@ -194,14 +198,14 @@ function buildRecentEvents({
 
 function ModeSwitcher({ mode, onChange }) {
   return (
-    <div className="mb-6 flex flex-wrap gap-3">
+    <div className="mode-switch-shell mb-6 flex flex-wrap gap-3">
       <button
         type="button"
         onClick={() => onChange('dashboard')}
-        className={`rounded-2xl px-4 py-2 text-sm font-semibold transition-colors ${
+        className={`mode-chip rounded-2xl px-4 py-2 text-sm font-semibold transition-colors ${
           mode === 'dashboard'
-            ? 'bg-slate-900 text-white'
-            : 'bg-white text-slate-700 shadow-sm hover:bg-slate-50'
+            ? 'mode-chip-active mode-chip-dashboard text-white'
+            : 'bg-white/90 text-slate-700 shadow-sm hover:bg-slate-50'
         }`}
       >
         Monitoring Dashboard
@@ -209,10 +213,10 @@ function ModeSwitcher({ mode, onChange }) {
       <button
         type="button"
         onClick={() => onChange('phone')}
-        className={`rounded-2xl px-4 py-2 text-sm font-semibold transition-colors ${
+        className={`mode-chip rounded-2xl px-4 py-2 text-sm font-semibold transition-colors ${
           mode === 'phone'
-            ? 'bg-slate-900 text-white'
-            : 'bg-white text-slate-700 shadow-sm hover:bg-slate-50'
+            ? 'mode-chip-active mode-chip-phone text-white'
+            : 'bg-white/90 text-slate-700 shadow-sm hover:bg-slate-50'
         }`}
       >
         Phone Companion
@@ -290,7 +294,7 @@ function DashboardView({
               error
                 ? 'border-red-200 bg-red-50 text-red-800'
                 : 'border-slate-200 bg-white text-slate-600'
-            }`}
+            } front-box`}
           >
             <p className="font-semibold">
               {error ? 'Database connection issue' : 'Syncing the latest device snapshot...'}
@@ -301,7 +305,7 @@ function DashboardView({
       )}
 
       <section
-        className={`rounded-[30px] border px-5 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] sm:px-6 ${topBannerTone.panel}`}
+        className={`front-box rounded-[30px] border px-5 py-5 shadow-[0_18px_45px_rgba(15,23,42,0.07)] sm:px-6 ${topBannerTone.panel}`}
       >
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-4">
@@ -316,9 +320,6 @@ function DashboardView({
                     ? 'Health Attention Needed'
                     : 'Monitoring Stable'}
               </h2>
-              <p className={`mt-1 max-w-3xl text-sm sm:text-base ${topBannerTone.body}`}>
-                {leadMessage}
-              </p>
             </div>
           </div>
 
@@ -338,7 +339,7 @@ function DashboardView({
       </section>
 
       {fallDetected && fallAlarm.needsInteraction && (
-        <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm">
+        <div className="front-box mt-4 rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 shadow-sm">
           Browser audio needs one tap to activate. Press{' '}
           <span className="font-semibold">Enable Alarm Audio</span> once, and future fall alerts
           will ring automatically while this dashboard stays open.
@@ -361,12 +362,12 @@ function DashboardView({
         <HealthCard
           icon={Radio}
           label="Device ID"
-          value={deviceId}
+          value="LifeCare+"
           accentColor="border-blue-500"
           iconBgColor="bg-blue-50"
           iconColor="text-blue-500"
           wrapValue
-          valueClassName="text-[2rem] leading-[1.05] sm:text-[2.1rem]"
+          valueClassName="text-[1.95rem] leading-[1.04] tracking-tight sm:text-[2.2rem]"
         />
         <HealthCard
           icon={HeartPulse}
@@ -405,18 +406,14 @@ function DashboardView({
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.18fr_1fr]">
-        <div className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+        <div className="front-box rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4">
               <div className="rounded-[22px] bg-blue-50 p-3 text-blue-500">
                 <MapPin size={24} strokeWidth={2} />
               </div>
               <div>
-                <h3 className="text-[1.65rem] font-bold text-slate-900">Latest Fall Location</h3>
-                <p className="mt-1 max-w-2xl text-sm text-slate-500">
-                  Coordinates appear here after the phone companion pushes the fall location into
-                  Supabase.
-                </p>
+                <h3 className="text-[1.65rem] font-bold text-slate-900">Latest Device Location</h3>
               </div>
             </div>
 
@@ -458,26 +455,19 @@ function DashboardView({
                   <h4 className="mt-4 text-xl font-bold text-slate-900">
                     Waiting for phone companion
                   </h4>
-                  <p className="mt-2 text-sm text-slate-600">
-                    Fall location will show here as soon as the paired phone sends coordinates for
-                    the active event.
-                  </p>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <div className="rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+        <div className="front-box rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
           <div className="flex items-start gap-4">
             <div className="rounded-[22px] bg-slate-100 p-3 text-slate-700">
               <AlertTriangle size={24} strokeWidth={2} />
             </div>
             <div>
               <h3 className="text-[1.65rem] font-bold text-slate-900">Recent Events</h3>
-              <p className="mt-1 text-sm text-slate-500">
-                The latest alerts and vitals tied to the current device feed.
-              </p>
             </div>
           </div>
 
@@ -485,7 +475,7 @@ function DashboardView({
             {recentEvents.map((event) => (
               <article
                 key={event.id}
-                className="rounded-[26px] border border-slate-200 bg-slate-50/80 p-5"
+                className="front-box rounded-[26px] border border-slate-200 bg-slate-50/80 p-5"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex items-start gap-3">
@@ -553,6 +543,7 @@ function PhoneCompanionView({
   geolocation,
   handleDeviceIdChange,
   handleDisableTracking,
+  handleUseLatestDeviceId,
   handleEnableTracking,
   handleManualSync,
   lastEventTime,
@@ -567,37 +558,30 @@ function PhoneCompanionView({
   const previewLocation = rowLocation ?? liveLocation ?? null;
   const syncMeta = PHONE_SYNC_META[phoneSyncStatus] ?? PHONE_SYNC_META.idle;
   const mapsLink = getGoogleMapsLink(previewLocation);
+  const gpsReady = Boolean(liveLocation);
+  const rowReady = Boolean(rowLocation);
 
   return (
     <>
-      <section className="rounded-[30px] border border-slate-200 bg-white px-5 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.07)] sm:px-6">
+      <section className="front-box rounded-[30px] border border-slate-200 bg-white px-5 py-6 shadow-[0_18px_45px_rgba(15,23,42,0.07)] sm:px-6">
         <h2 className="text-2xl font-bold text-slate-900">Phone Companion Mode</h2>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600 sm:text-base">
-          Is screen ko phone par kholkar location permission on rakho. Jab paired hardware fall
-          event Supabase me bhejega, ye phone us event ke liye current coordinates database me push
-          karega.
-        </p>
         {!isSecureOrigin && (
-          <div className="mt-4 rounded-[24px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            Ye mobile URL abhi insecure `http://` par chal rahi hai, isliye browser phone GPS
-            allow nahi karega. Phone location ke liye page ko `https://` URL par kholna hoga.
+          <div className="front-box mt-4 rounded-[24px] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            This URL is running on insecure `http://`. Open the page on `https://` to enable phone
+            location.
           </div>
         )}
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-6">
-          <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+          <div className="front-box rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-4">
               <div className="rounded-[22px] bg-blue-50 p-3 text-blue-500">
                 <Radio size={24} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-[1.4rem] font-bold text-slate-900">Link This Phone</h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Hardware device ID yahan set karo. Phone sirf isi linked device ke Supabase
-                  fall events par location bhejega.
-                </p>
               </div>
             </div>
 
@@ -615,20 +599,23 @@ function PhoneCompanionView({
               <p className="text-sm text-slate-500">
                 Latest live device in dashboard feed: <span className="font-semibold">{activeDeviceId}</span>
               </p>
+              <button
+                type="button"
+                onClick={handleUseLatestDeviceId}
+                className="inline-flex min-h-[42px] items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition-colors hover:bg-slate-50"
+              >
+                Use Latest Device ID
+              </button>
             </div>
           </div>
 
-          <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+          <div className="front-box rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-4">
               <div className="rounded-[22px] bg-emerald-50 p-3 text-emerald-500">
                 <Navigation size={24} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-[1.4rem] font-bold text-slate-900">Arm Phone Location</h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Location ON karne ke baad ye phone live GPS watch chalayega. Jaise hi hardware
-                  wali fall row Supabase me aayegi, same event me coordinates save ho jayenge.
-                </p>
               </div>
             </div>
 
@@ -671,17 +658,13 @@ function PhoneCompanionView({
         </div>
 
         <div className="space-y-6">
-          <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+          <div className="front-box rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
             <div className="flex items-start gap-4">
               <div className="rounded-[22px] bg-red-50 p-3 text-red-500">
                 <Siren size={24} strokeWidth={2} />
               </div>
               <div className="min-w-0 flex-1">
                 <h3 className="text-[1.4rem] font-bold text-slate-900">Fall Event Watcher</h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Ye phone Supabase ki latest fall row sun raha hai. Linked device ke liye jaise hi
-                  `fall_detected = true` aayega, current phone GPS usi event me save ho jayegi.
-                </p>
               </div>
             </div>
 
@@ -705,14 +688,23 @@ function PhoneCompanionView({
               </p>
             </div>
 
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700">
+              <p className="font-semibold text-slate-900">Map readiness</p>
+              <p className="mt-1">HTTPS URL: {isSecureOrigin ? 'OK' : 'Required'}</p>
+              <p>Device match: {rowMatchesLinkedDevice ? 'OK' : 'Mismatch'}</p>
+              <p>GPS tracking: {geolocation.watching ? 'ON' : 'OFF'}</p>
+              <p>Phone GPS fix: {gpsReady ? 'Captured' : 'Missing'}</p>
+              <p>Saved in Supabase row: {rowReady ? 'Yes' : 'Not yet'}</p>
+            </div>
+
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
                 onClick={() => handleManualSync({ force: true })}
-                disabled={!fallDetected || !rowMatchesLinkedDevice}
+                disabled={!rowMatchesLinkedDevice || !lastEventTime}
                 className="inline-flex min-h-[48px] items-center justify-center rounded-2xl bg-red-500 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-600 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Push Current Location Now
+                Push Current Location to Dashboard
               </button>
               <button
                 type="button"
@@ -725,13 +717,10 @@ function PhoneCompanionView({
             </div>
           </div>
 
-          <div className="rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
+          <div className="front-box rounded-[30px] border border-slate-200 bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)]">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-[1.4rem] font-bold text-slate-900">Live Phone GPS</h3>
-                <p className="mt-1 text-sm text-slate-500">
-                  Preview of the location this phone will send during the next fall event.
-                </p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-slate-700">
                 {rowLocation ? 'Saved in Supabase' : liveLocation ? 'Phone GPS Ready' : 'No GPS Fix'}
@@ -764,14 +753,10 @@ function PhoneCompanionView({
                     <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/80 text-blue-500 shadow-lg">
                       <MapPin size={30} strokeWidth={2} />
                     </div>
-                    <h4 className="mt-4 text-xl font-bold text-slate-900">Enable location on phone</h4>
-                    <p className="mt-2 text-sm text-slate-600">
-                      Once this phone gets a GPS fix, this preview will show the coordinates ready to
-                      sync into Supabase.
-                    </p>
-                  </div>
+                  <h4 className="mt-4 text-xl font-bold text-slate-900">Enable location on phone</h4>
                 </div>
-              )}
+              </div>
+            )}
             </div>
 
             {geolocation.error && <p className="mt-4 text-sm text-red-600">{geolocation.error}</p>}
@@ -784,6 +769,7 @@ function PhoneCompanionView({
 
 function App() {
   const [mode, setMode] = React.useState(getInitialMode);
+  const [theme, setTheme] = React.useState('dark');
   const { data, loading, error } = useHealthData(PATIENT_ID);
   const geolocation = useGeolocation();
   const isSecureOrigin = typeof window === 'undefined' ? true : window.isSecureContext;
@@ -799,6 +785,26 @@ function App() {
   React.useEffect(() => {
     if (typeof window === 'undefined') return undefined;
 
+    let frame = null;
+    const onPointerMove = (event) => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        document.documentElement.style.setProperty('--mx', `${event.clientX}px`);
+        document.documentElement.style.setProperty('--my', `${event.clientY}px`);
+        frame = null;
+      });
+    };
+
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    return () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
     const syncModeFromUrl = () => setMode(getInitialMode());
     window.addEventListener('popstate', syncModeFromUrl);
     return () => window.removeEventListener('popstate', syncModeFromUrl);
@@ -808,6 +814,12 @@ function App() {
     if (typeof window === 'undefined') return;
     window.localStorage.setItem('lifecare-phone-device-id', linkedDeviceId);
   }, [linkedDeviceId]);
+
+  React.useEffect(() => {
+    if (typeof document === 'undefined' || typeof window === 'undefined') return;
+    document.documentElement.setAttribute('data-theme', theme);
+    window.localStorage.setItem('lifecare-theme', theme);
+  }, [theme]);
 
   React.useEffect(() => {
     if (!linkedDeviceId && data?.deviceId) {
@@ -840,7 +852,10 @@ function App() {
     String(data?.eventType || '')
       .toLowerCase()
       .includes('fall');
-  const rowMatchesLinkedDevice = !linkedDeviceId || linkedDeviceId === deviceId;
+  const normalizedLinkedDeviceId = normalizeDeviceId(linkedDeviceId);
+  const normalizedDeviceId = normalizeDeviceId(deviceId);
+  const rowMatchesLinkedDeviceNormalized =
+    !normalizedLinkedDeviceId || normalizedLinkedDeviceId === normalizedDeviceId;
   const storedLocation = data?.coordinates ?? null;
   const vitalAlerts = getAlerts(temperature, heartRate, bloodOxygen);
   const alertMessages = buildAlertMessages({
@@ -918,13 +933,13 @@ function App() {
     ? `Synced from ${data?.locationSource || 'phone'}`
     : fallDetected
       ? 'Waiting for phone companion to push location'
-      : 'Location appears only on fall events';
+      : 'Waiting for phone companion to sync location';
 
   const syncPhoneLocationToEvent = React.useCallback(
     async ({ force = false } = {}) => {
-      if (mode !== 'phone' || !fallDetected || !rowMatchesLinkedDevice || !data?.id) return false;
+      if (mode !== 'phone' || !rowMatchesLinkedDeviceNormalized || !data?.id) return false;
 
-      const eventKey = `${data.id}:${lastEventTime ?? 'latest'}`;
+      const eventKey = `${data.id}:${fallDetected ? 'fall' : 'live'}`;
       if (!force && requestedPhoneSyncRef.current === eventKey) return false;
 
       requestedPhoneSyncRef.current = eventKey;
@@ -974,7 +989,7 @@ function App() {
         return false;
       }
     },
-    [data?.id, fallDetected, geolocation, lastEventTime, mode, rowMatchesLinkedDevice]
+    [data?.id, fallDetected, geolocation, lastEventTime, mode, rowMatchesLinkedDeviceNormalized]
   );
 
   React.useEffect(() => {
@@ -985,15 +1000,8 @@ function App() {
       return;
     }
 
-    if (!rowMatchesLinkedDevice) {
+    if (!rowMatchesLinkedDeviceNormalized) {
       setPhoneSyncStatus('armed');
-      return;
-    }
-
-    if (!fallDetected) {
-      requestedPhoneSyncRef.current = '';
-      setPhoneSyncStatus('armed');
-      setPhoneSyncError('');
       return;
     }
 
@@ -1003,12 +1011,14 @@ function App() {
       return;
     }
 
+    setPhoneSyncStatus('armed');
+    setPhoneSyncError('');
     syncPhoneLocationToEvent();
   }, [
     fallDetected,
     geolocation.watching,
     mode,
-    rowMatchesLinkedDevice,
+    rowMatchesLinkedDeviceNormalized,
     storedLocation,
     syncPhoneLocationToEvent,
   ]);
@@ -1041,7 +1051,7 @@ function App() {
   }, [storedLocation]);
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)]">
+    <div className="app-shell min-h-screen bg-[var(--page-bg)]">
       <Header
         title={mode === 'phone' ? 'LifeCare+ Phone Companion' : 'LifeCare+'}
         subtitle={
@@ -1049,6 +1059,8 @@ function App() {
             ? 'Arm phone GPS for fall-event location sync'
             : 'Real-Time Health Monitoring Dashboard'
         }
+        theme={theme}
+        onToggleTheme={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
         notificationProps={{
           ...notificationProps,
           isOpen: notificationPanelOpen,
@@ -1057,48 +1069,53 @@ function App() {
       />
 
       <main className="mx-auto max-w-[1400px] px-4 pb-10 pt-6 sm:px-6 lg:px-8">
-        <ModeSwitcher mode={mode} onChange={changeMode} />
+        <div className="mode-switch-enter">
+          <ModeSwitcher mode={mode} onChange={changeMode} />
+        </div>
 
-        {mode === 'phone' ? (
-          <PhoneCompanionView
-            activeDeviceId={deviceId}
-            fallAlarm={fallAlarm}
-            fallDetected={fallDetected}
-            geolocation={geolocation}
-            handleDeviceIdChange={setLinkedDeviceId}
-            handleDisableTracking={handleDisableTracking}
-            handleEnableTracking={handleEnableTracking}
-            handleManualSync={syncPhoneLocationToEvent}
-            isSecureOrigin={isSecureOrigin}
-            lastEventTime={lastEventTime}
-            linkedDeviceId={linkedDeviceId}
-            phoneSyncError={phoneSyncError}
-            phoneSyncStatus={phoneSyncStatus}
-            rowMatchesLinkedDevice={rowMatchesLinkedDevice}
-            rowLocation={storedLocation}
-          />
-        ) : (
-          <DashboardView
-            alertMessages={alertMessages}
-            bloodOxygen={bloodOxygen}
-            clockParts={clockParts}
-            deviceId={deviceId}
-            error={error}
-            fallAlarm={fallAlarm}
-            fallDetected={fallDetected}
-            heartRate={heartRate}
-            leadMessage={leadMessage}
-            loading={loading}
-            location={storedLocation}
-            locationStateLabel={dashboardLocationStateLabel}
-            mapsLink={getGoogleMapsLink(storedLocation)}
-            openMaps={openDashboardMaps}
-            recentEvents={recentEvents}
-            statusText={statusText}
-            StatusIcon={StatusIcon}
-            topBannerTone={topBannerTone}
-          />
-        )}
+        <div className="view-enter" key={mode}>
+          {mode === 'phone' ? (
+            <PhoneCompanionView
+              activeDeviceId={deviceId}
+              fallAlarm={fallAlarm}
+              fallDetected={fallDetected}
+              geolocation={geolocation}
+              handleDeviceIdChange={setLinkedDeviceId}
+              handleUseLatestDeviceId={() => setLinkedDeviceId(deviceId)}
+              handleDisableTracking={handleDisableTracking}
+              handleEnableTracking={handleEnableTracking}
+              handleManualSync={syncPhoneLocationToEvent}
+              isSecureOrigin={isSecureOrigin}
+              lastEventTime={lastEventTime}
+              linkedDeviceId={linkedDeviceId}
+              phoneSyncError={phoneSyncError}
+              phoneSyncStatus={phoneSyncStatus}
+              rowMatchesLinkedDevice={rowMatchesLinkedDeviceNormalized}
+              rowLocation={storedLocation}
+            />
+          ) : (
+            <DashboardView
+              alertMessages={alertMessages}
+              bloodOxygen={bloodOxygen}
+              clockParts={clockParts}
+              deviceId={deviceId}
+              error={error}
+              fallAlarm={fallAlarm}
+              fallDetected={fallDetected}
+              heartRate={heartRate}
+              leadMessage={leadMessage}
+              loading={loading}
+              location={storedLocation}
+              locationStateLabel={dashboardLocationStateLabel}
+              mapsLink={getGoogleMapsLink(storedLocation)}
+              openMaps={openDashboardMaps}
+              recentEvents={recentEvents}
+              statusText={statusText}
+              StatusIcon={StatusIcon}
+              topBannerTone={topBannerTone}
+            />
+          )}
+        </div>
       </main>
     </div>
   );

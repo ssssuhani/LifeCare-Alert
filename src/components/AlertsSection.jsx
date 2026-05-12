@@ -5,7 +5,7 @@ function AlertsSection({ alerts }) {
   if (!alerts || alerts.length === 0) return null;
 
   return (
-    <div className="rounded-[28px] border border-red-100 bg-red-50/70 p-5 shadow-[0_18px_40px_rgba(239,68,68,0.08)]">
+    <div className="front-box rounded-[28px] border border-red-100 bg-red-50/70 p-5 shadow-[0_18px_40px_rgba(239,68,68,0.08)]">
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0 rounded-[18px] bg-red-100 p-2.5">
           <AlertTriangle className="text-red-600" size={22} strokeWidth={2} />

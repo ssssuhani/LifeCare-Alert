@@ -41,14 +41,14 @@ function NotificationPanel({
       >
         <Bell size={22} strokeWidth={2} />
         {notifications.length > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full px-1">
+          <span className="notify-dot absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-white bg-red-500 rounded-full px-1">
             {notifications.length > 99 ? '99+' : notifications.length}
           </span>
         )}
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-96 max-h-[70vh] sm:max-h-[420px] bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col">
+        <div className="notification-pop absolute right-0 mt-2 w-[calc(100vw-2rem)] max-w-96 max-h-[70vh] sm:max-h-[420px] bg-white rounded-xl shadow-xl border border-slate-200 z-50 overflow-hidden flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-slate-50">
             <h3 className="font-semibold text-slate-800">Notifications</h3>
             {notifications.length > 0 && (

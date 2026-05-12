@@ -15,7 +15,7 @@ function HealthCard({
 
   return (
     <div
-      className={`rounded-[30px] border border-slate-200/80 border-t-[5px] ${accentColor} bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)] transition-transform duration-300 hover:-translate-y-0.5`}
+      className={`metric-card health-card-animate card-spotlight rounded-[30px] border border-slate-200/80 border-t-[5px] ${accentColor} bg-white p-6 shadow-[0_22px_55px_rgba(15,23,42,0.08)] transition-transform duration-300 hover:-translate-y-0.5`}
     >
       <div className="flex items-start justify-between">
         <div className="min-w-0">
@@ -23,7 +23,7 @@ function HealthCard({
             {label}
           </p>
           <div
-            className={`min-h-[5.5rem] text-[2.8rem] font-bold text-slate-900 tabular-nums ${wrapValue ? 'break-all leading-[1.02]' : 'leading-[0.95]'} ${valueClassName}`}
+            className={`metric-value min-h-[5.5rem] text-[2.8rem] font-bold text-slate-900 tabular-nums ${wrapValue ? 'break-words leading-[1.02]' : 'leading-[0.95]'} ${valueClassName}`}
           >
             {value}
             {unit && valueIsPlain && (
@@ -34,7 +34,7 @@ function HealthCard({
           </div>
         </div>
         <div
-          className={`ml-4 rounded-[20px] p-3 ${iconBgColor} ${iconColor}`}
+          className={`metric-icon ml-4 rounded-[20px] p-3 ${iconBgColor} ${iconColor}`}
         >
           {Icon && <Icon size={28} strokeWidth={2} />}
         </div>
